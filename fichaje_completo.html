@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Obra - Historial de Avisos</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .admin-container {
+            background-color: #f0f4f7;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 800px;
+            text-align: left;
+            margin-top: 30px;
+        }
+        h1, h2, h3 {
+            color: #007bff;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        h2 {
+            color: #0056b3;
+            font-size: 20px;
+            margin-top: 30px;
+        }
+        h3 {
+            font-size: 18px;
+            color: #495057;
+        }
+        .form-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #0069d9;
+            transform: translateY(-2px);
+        }
+        #message {
+            margin-top: 20px;
+            font-weight: 600;
+            color: #dc3545;
+        }
+        #fichaje-panel, #registro-panel, #admin-panel {
+            display: none;
+        }
+        .fichaje-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .btn-entry {
+            background-color: #28a745;
+            color: #fff;
+            width: 50%;
+        }
+        .btn-exit {
+            background-color: #dc3545;
+            color: #fff;
+            width: 50%;
+        }
+        .btn-entry:hover:not(:disabled) {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+        .btn-exit:hover:not(:disabled) {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background-color: #e9ecef;
+            color: #495057;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .logout-btn {
+            background-color: #6c757d;
+            color: #fff;
+            margin-top: 20px;
+            width: auto;
+        }
+        .logout-btn:hover {
+            background-color: #5a6268;
+        }
+        .admin-btn {
+            background-color: #17a2b8;
+            color: #fff;
+            margin-top: 20px;
+        }
+        .admin-btn:hover {
+            background-color: #138496;
+        }
+        .toggle-form-btn {
+            margin-top: 20px;
+            background-color: #f0f0f0;
+            color: #555;
+            border: 1px solid #ccc;
+        }
+        .aviso-container {
+            border: 1px solid #ffc107;
+            background-color: #fffbe6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .aviso-container h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .aviso-container ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 0;
+            font-weight: bold;
+            color: #856404;
+        }
+        .aviso-container ul li {
+            margin-bottom: 10px;
+        }
+        .aviso-confirm {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .aviso-confirm label {
+            margin: 0;
+            margin-left: 8px;
+            font-weight: normal;
+        }
+        #calendar-container {
+            margin-top: 30px;
+        }
+        .calendar-weekdays {
+            display: flex;
+            justify-content: space-around;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .calendar-weekdays > div {
+            width: 100%;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        .calendar-day {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px 5px;
+            background-color: #f9f9f9;
+            min-height: 100px;
+        }
+        .calendar-day.today {
+            border: 2px solid #007bff;
+        }
+        .day-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .fichaje-event {
+            font-size: 12px;
+            padding: 3px 6px;
+            border-radius: 5px;
+            margin: 3px 0;
+            display: block;
+        }
+        .event-entrada {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .event-salida {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .action-buttons button {
+            width: auto;
+            margin: 0 5px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .btn-edit {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .btn-edit:hover {
+            background-color: #e0a800;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="login-container">
+        <h1>
+            <div><img src="https://i.ibb.co/680xQ8g/ecosta.png" alt="Logo de Ecosta Construccions" style="height: 50px;"></div>
+            Fichajes de Obra
+        </h1>
+        <div id="login-form">
+            <p>Ingresa tu DNI y contraseña para continuar.</p>
+            <div class="form-group">
+                <label for="dni-input">DNI:</label>
+                <input type="text" id="dni-input" placeholder="Ej: 12345678A">
+            </div>
+            <div class="form-group">
+                <label for="password-input">Contraseña:</label>
+                <input type="password" id="password-input" placeholder="Tu contraseña">
+            </div>
+            <button class="btn btn-primary" onclick="login()">Acceder</button>
+            <p id="login-message"></p>
+            <button class="btn toggle-form-btn" onclick="toggleForm('registro')">¿Eres nuevo? Regístrate</button>
+        </div>
+
+        <div id="registro-form" style="display: none;">
+            <p>Introduce tus datos para registrarte.</p>
+            <div class="form-group">
+                <label for="nombre-reg">Nombre y Apellido:</label>
+                <input type="text" id="nombre-reg" placeholder="Ej: Juan Pérez">
+            </div>
+            <div class="form-group">
+                <label for="dni-reg">DNI:</label>
+                <input type="text" id="dni-reg" placeholder="Ej: 12345678A">
+            </div>
+            <div class="form-group">
+                <label for="password-reg">Contraseña:</label>
+                <input type="password" id="password-reg" placeholder="Crea tu contraseña">
+            </div>
+            <button class="btn btn-primary" onclick="registrarOperario()">Registrarse</button>
+            <p id="registro-message"></p>
+            <button class="btn toggle-form-btn" onclick="toggleForm('login')">Ya tengo cuenta. Acceder</button>
+        </div>
+        
+        <button class="btn admin-btn" onclick="mostrarAdminLogin()">Área de Administración</button>
+    </div>
+
+    <div class="container" id="fichaje-panel">
+        <h1 id="welcome-message"></h1>
+        
+        <div id="avisos-panel">
+            <h2 id="aviso-titulo">📢 Aviso de Entrada</h2>
+            <div class="aviso-container">
+                <div id="aviso-content"></div>
+            </div>
+            <div class="aviso-confirm">
+                <input type="checkbox" id="confirm-aviso">
+                <label for="confirm-aviso">He leído y entiendo este aviso.</label>
+            </div>
+        </div>
+        
+        <h2>Fichaje del Día</h2>
+        <div class="fichaje-buttons">
+            <button class="btn btn-entry" id="btn-entrada" onclick="fichar('entrada')">Entrada</button>
+            <button class="btn btn-exit" id="btn-salida" onclick="fichar('salida')">Salida</button>
+        </div>
+        
+        <h2>Tu Historial Semanal</h2>
+        <div id="calendar-container">
+            <div class="calendar-weekdays">
+                <div>Lunes</div>
+                <div>Martes</div>
+                <div>Miércoles</div>
+                <div>Jueves</div>
+                <div>Viernes</div>
+                <div>Sábado</div>
+                <div>Domingo</div>
+            </div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+        </div>
+        
+        <button class="btn logout-btn" onclick="logout()">Cerrar Sesión</button>
+    </div>
+
+    <div class="admin-container" id="admin-panel">
+        <h2>Área de Administración</h2>
+        <div id="password-form" class="form-group">
+            <label for="admin-password">Contraseña de Administrador:</label>
+            <input type="password" id="admin-password" placeholder="Ingresa la contraseña">
+            <button class="btn btn-primary" onclick="checkPassword()" style="margin-top: 10px;">Acceder</button>
+        </div>
+        <div id="admin-content" style="display: none;">
+            <h3>Gestión de Operarios</h3>
+            <table id="operarios-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>DNI</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="operarios-body"></tbody>
+            </table>
+
+            <h3>Publicar Avisos</h3>
+            <div class="form-group">
+                <label for="aviso-entrada-admin">Aviso de Entrada:</label>
+                <textarea id="aviso-entrada-admin" rows="4" placeholder="Escribe el aviso que aparecerá al fichar la entrada."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="guardarAviso('entrada')">Guardar Aviso de Entrada</button>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <label for="aviso-salida-admin">Aviso de Salida:</label>
+                <textarea id="aviso-salida-admin" rows="4" placeholder="Escribe el aviso que aparecerá al fichar la salida."></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="guardarAviso('salida')">Guardar Aviso de Salida</button>
+            
+            <h3>Historial de Avisos</h3>
+            <table id="avisos-table">
+                <thead>
+                    <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Tipo</th>
+                        <th>Aviso</th>
+                    </tr>
+                </thead>
+                <tbody id="avisos-body"></tbody>
+            </table>
+            
+            <h3>Registros Diarios</h3>
+            <table id="registros-table">
+                <thead>
+                    <tr>
+                        <th>Operario</th>
+                        <th>DNI</th>
+                        <th>Tipo</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                    </tr>
+                </thead>
+                <tbody id="registros-body"></tbody>
+            </table>
+            <div class="fichaje-buttons" style="margin-top: 20px;">
+                <button class="btn btn-entry" onclick="mostrarResumen()">Ver Resumen de Horas</button>
+                <button class="btn btn-exit" onclick="borrarRegistros()">Borrar Todos los Registros</button>
+            </div>
+            
+            <div id="resumen-section" style="display: none;">
+                <h3>Resumen de Horas Trabajadas</h3>
+                <table id="resumen-table">
+                    <thead>
+                        <tr>
+                            <th>Operario</th>
+                            <th>Horas Trabajadas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resumen-body"></tbody>
+                </table>
+            </div>
+            
+            <button class="btn btn-primary" onclick="exportarAExcel()">Descargar Registros (Excel)</button>
+            <button class="btn logout-btn" onclick="logoutAdmin()">Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <script>
+        // --- ⚙️ Configuración ---
+        const adminPassword = "sn9ymbsE3*"; // ⚠️ ¡Cámbiala por una más segura!
+
+        // --- 🛠️ Lógica del Programa ---
+        const loginContainer = document.getElementById('login-container');
+        const fichajePanel = document.getElementById('fichaje-panel');
+        const adminPanel = document.getElementById('admin-panel');
+        const loginForm = document.getElementById('login-form');
+        const registroForm = document.getElementById('registro-form');
+        const avisosPanel = document.getElementById('avisos-panel');
+        
+        const dniInput = document.getElementById('dni-input');
+        const passwordInput = document.getElementById('password-input');
+        const loginMessage = document.getElementById('login-message');
+
+        const nombreRegInput = document.getElementById('nombre-reg');
+        const dniRegInput = document.getElementById('dni-reg');
+        const passwordRegInput = document.getElementById('password-reg');
+        const registroMessage = document.getElementById('registro-message');
+        
+        const welcomeMessage = document.getElementById('welcome-message');
+        const calendarGrid = document.getElementById('calendar-grid');
+        const confirmAviso = document.getElementById('confirm-aviso');
+        
+        const btnEntrada = document.getElementById('btn-entrada');
+        const btnSalida = document.getElementById('btn-salida');
+
+        const adminPasswordInput = document.getElementById('admin-password');
+        const registrosBody = document.getElementById('registros-body');
+        const resumenBody = document.getElementById('resumen-body');
+        const adminContent = document.getElementById('admin-content');
+        const resumenSection = document.getElementById('resumen-section');
+        const avisoEntradaAdminInput = document.getElementById('aviso-entrada-admin');
+        const avisoSalidaAdminInput = document.getElementById('aviso-salida-admin');
+        const avisoContentDiv = document.getElementById('aviso-content');
+        const avisoTitulo = document.getElementById('aviso-titulo');
+        const operariosBody = document.getElementById('operarios-body');
+        const avisosBody = document.getElementById('avisos-body');
+        
+        let operarioActual = null;
+        const nombreDias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+        function getOperarios() {
+            return JSON.parse(localStorage.getItem('operarios')) || [];
+        }
+
+        function setOperarios(operarios) {
+            localStorage.setItem('operarios', JSON.stringify(operarios));
+        }
+
+        function toggleForm(form) {
+            if (form === 'registro') {
+                loginForm.style.display = 'none';
+                registroForm.style.display = 'block';
+                loginMessage.textContent = '';
+            } else {
+                loginForm.style.display = 'block';
+                registroForm.style.display = 'none';
+                registroMessage.textContent = '';
+            }
+        }
+
+        // Funciones para el registro de operarios
+        function registrarOperario() {
+            const nombre = nombreRegInput.value.trim();
+            const dni = dniRegInput.value.trim().toUpperCase();
+            const password = passwordRegInput.value.trim();
+
+            if (!nombre || !dni || !password) {
+                registroMessage.textContent = "Por favor, completa todos los campos.";
+                registroMessage.style.color = '#dc3545';
+                return;
+            }
+
+            let operarios = getOperarios();
+            const dniExistente = operarios.find(op => op.dni === dni);
+            if (dniExistente) {
+                registroMessage.textContent = "Error: Este DNI ya está registrado.";
+                registroMessage.style.color = '#dc3545';
+                return;
+            }
+
+            const nuevoOperario = { nombre, dni, password };
+            operarios.push(nuevoOperario);
+            setOperarios(operarios);
+
+            registroMessage.textContent = `✅ ¡Registro exitoso! Ya puedes iniciar sesión.`;
+            registroMessage.style.color = '#28a745';
+            nombreRegInput.value = '';
+            dniRegInput.value = '';
+            passwordRegInput.value = '';
+            setTimeout(() => toggleForm('login'), 3000);
+        }
+
+        // Funciones para el panel de operarios
+        function login() {
+            const dni = dniInput.value.trim().toUpperCase();
+            const password = passwordInput.value.trim();
+            const operarios = getOperarios();
+            const operarioEncontrado = operarios.find(op => op.dni === dni && op.password === password);
+            
+            if (operarioEncontrado) {
+                operarioActual = operarioEncontrado;
+                loginContainer.style.display = 'none';
+                fichajePanel.style.display = 'block';
+                adminPanel.style.display = 'none';
+                welcomeMessage.textContent = `¡Bienvenido, ${operarioActual.nombre}!`;
+                cargarHistorialFichajes();
+                verificarFichajeHoy();
+            } else {
+                loginMessage.textContent = "DNI o contraseña incorrectos. Inténtalo de nuevo.";
+                loginMessage.style.color = '#dc3545';
+                dniInput.value = '';
+                passwordInput.value = '';
+            }
+        }
+
+        function fichar(tipo) {
+            if (!operarioActual) return;
+
+            const hoy = new Date().toLocaleDateString('es-ES');
+            const registros = JSON.parse(localStorage.getItem('fichajes_mejorado')) || [];
+            const registrosHoy = registros.filter(reg => reg.dni === operarioActual.dni && reg.fecha === hoy);
+            const tieneEntrada = registrosHoy.some(reg => reg.tipo === 'entrada');
+            const tieneSalida = registrosHoy.some(reg => reg.tipo === 'salida');
+
+            if (tipo === 'entrada' && tieneEntrada) {
+                alert("Ya has fichado una entrada hoy.");
+                return;
+            }
+            if (tipo === 'salida' && !tieneEntrada) {
+                alert("Debes fichar una entrada antes de una salida.");
+                return;
+            }
+            if (tipo === 'salida' && tieneSalida) {
+                alert("Ya has fichado una salida hoy.");
+                return;
+            }
+            
+            // Validar aviso de entrada solo si es un fichaje de entrada
+            if (tipo === 'entrada') {
+                const avisoEntrada = localStorage.getItem('avisos_entrada');
+                const haLeidoAviso = confirmAviso.checked;
+                if (avisoEntrada && !haLeidoAviso) {
+                    alert("Debes confirmar que has leído el aviso de entrada antes de fichar.");
+                    return;
+                }
+            }
+
+            const registro = {
+                dni: operarioActual.dni,
+                nombre: operarioActual.nombre,
+                tipo: tipo,
+                fecha: hoy,
+                hora: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+            };
+            guardarRegistro(registro);
+            cargarHistorialFichajes();
+            verificarFichajeHoy();
+            alert(`✅ Fichaje de ${operarioActual.nombre} (${tipo}) registrado con éxito.`);
+        }
+
+        function verificarFichajeHoy() {
+            const hoy = new Date().toLocaleDateString('es-ES');
+            const registros = JSON.parse(localStorage.getItem('fichajes_mejorado')) || [];
+            const registrosHoy = registros.filter(reg => reg.dni === operarioActual.dni && reg.fecha === hoy);
+            const tieneEntrada = registrosHoy.some(reg => reg.tipo === 'entrada');
+            const tieneSalida = registrosHoy.some(reg => reg.tipo === 'salida');
+            
+            if (tieneEntrada && !tieneSalida) {
+                btnEntrada.disabled = true;
+                btnSalida.disabled = false;
+                cargarAvisoOperario('salida');
+                document.getElementById('aviso-confirm').style.display = 'none';
+            } else if (tieneEntrada && tieneSalida) {
+                btnEntrada.disabled = true;
+                btnSalida.disabled = true;
+                cargarAvisoOperario('completo');
+                document.getElementById('aviso-confirm').style.display = 'none';
+            } else {
+                btnEntrada.disabled = false;
+                btnSalida.disabled = true;
+                cargarAvisoOperario('entrada');
+                document.getElementById('aviso-confirm').style.display = 'flex';
+            }
+        }
+        
+        function cargarAvisoOperario(tipo) {
+            let aviso = null;
+            let titulo = "";
+            let confirmacionVisible = false;
+
+            if (tipo === 'entrada') {
+                aviso = localStorage.getItem('avisos_entrada');
+                titulo = "📢 Aviso de Entrada";
+                confirmacionVisible = true;
+            } else if (tipo === 'salida') {
+                aviso = localStorage.getItem('avisos_salida');
+                titulo = "📢 Aviso de Salida";
+                confirmacionVisible = false;
+            } else {
+                avisosPanel.style.display = 'none';
+                return;
+            }
+
+            if (aviso) {
+                avisosPanel.style.display = 'block';
+                avisoTitulo.textContent = titulo;
+                const contenido = aviso.split('\n').map(linea => {
+                    if (linea.startsWith('* ') || linea.startsWith('- ')) {
+                        return `<li>${linea.substring(2)}</li>`;
+                    } else {
+                        return `<h3>${linea}</h3>`;
+                    }
+                }).join('');
+                avisoContentDiv.innerHTML = `<ul>${contenido}</ul>`;
+                document.getElementById('aviso-confirm').style.display = confirmacionVisible ? 'flex' : 'none';
+            } else {
+                avisosPanel.style.display = 'none';
+            }
+        }
+
+        function guardarRegistro(registro) {
+            const registros = JSON.parse(localStorage.getItem('fichajes_mejorado')) || [];
+            registros.push(registro);
+            localStorage.setItem('fichajes_mejorado', JSON.stringify(registros));
+        }
+
+        function cargarHistorialFichajes() {
+            if (!operarioActual) return;
+            const registros = JSON.parse(localStorage.getItem('fichajes_mejorado')) || [];
+            const registrosPersonales = registros.filter(reg => reg.dni === operarioActual.dni);
+            
+            const hoy = new Date();
+            const primerDiaSemana = new Date(hoy.setDate(hoy.getDate() - hoy.getDay() + (hoy.getDay() === 0 ? -6 : 1)));
+            
+            calendarGrid.innerHTML = '';
+            for (let i = 0; i < 7; i++) {
+                const dia = new Date(primerDiaSemana);
+                dia.setDate(primerDiaSemana.getDate() + i);
+                const diaSemana = nombreDias[dia.getDay()];
+                const esHoy = dia.toDateString() === new Date().toDateString();
+
+                const diaDiv = document.createElement('div');
+                diaDiv.className = `calendar-day ${esHoy ? 'today' : ''}`;
+                diaDiv.innerHTML = `<div class="day-label">${diaSemana} ${dia.getDate()}</div>`;
+
+                const registrosDia = registrosPersonales.filter(reg => {
+                    const [d, m, a] = reg.fecha.split('/');
+                    const fechaReg = new Date(a, m - 1, d);
+                    return fechaReg.toDateString() === dia.toDateString();
+                });
+
+                registrosDia.forEach(reg => {
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = `fichaje-event event-${reg.tipo}`;
+                    eventDiv.textContent = `${reg.tipo.charAt(0).toUpperCase() + reg.tipo.slice(1)}: ${reg.hora}`;
+                    diaDiv.appendChild(eventDiv);
+                });
+
+                calendarGrid.appendChild(diaDiv);
+            }
+        }
+
+        function logout() {
+            operarioActual = null;
+            fichajePanel.style.display = 'none';
+            loginContainer.style.display = 'block';
+            toggleForm('login');
+            dniInput.value = '';
+            passwordInput.value = '';
+        }
+
+        // Funciones para el panel de administración
+        function mostrarAdminLogin() {
+            loginContainer.style.display = 'none';
+            fichajePanel.style.display = 'none';
+            adminPanel.style.display = 'block';
+            adminPasswordInput.value = '';
+            document.getElementById('password-form').style.display = 'block';
+            adminContent.style.display = 'none';
+            resumenSection.style.display = 'none';
+        }
+
+        function checkPassword() {
+            if (adminPasswordInput.value === adminPassword) {
+                document.getElementById('password-form').style.display = 'none';
+                adminContent.style.display = 'block';
+                actualizarTablaRegistros();
+                cargarTablaOperarios();
+                cargarAvisosAdmin();
+                cargarHistorialAvisos();
+            } else {
+                alert("Contraseña incorrecta. Acceso denegado.");
+                adminPasswordInput.value = '';
+            }
+        }
+        
+        function cargarAvisosAdmin() {
+            const avisoEntrada = localStorage.getItem('avisos_entrada');
+            const avisoSalida = localStorage.getItem('avisos_salida');
+            avisoEntradaAdminInput.value = avisoEntrada || '';
+            avisoSalidaAdminInput.value = avisoSalida || '';
+        }
+
+        function guardarAviso(tipo) {
+            const avisoInput = (tipo === 'entrada') ? avisoEntradaAdminInput : avisoSalidaAdminInput;
+            const nuevoAviso = avisoInput.value.trim();
+
+            if (nuevoAviso === "") {
+                if (confirm(`¿Estás seguro de que quieres borrar el aviso de ${tipo}?`)) {
+                    localStorage.removeItem(`avisos_${tipo}`);
+                    alert(`Aviso de ${tipo} borrado.`);
+                }
+            } else {
+                const historial = JSON.parse(localStorage.getItem('avisos_history')) || [];
+                historial.push({
+                    fecha: new Date().toLocaleDateString('es-ES'),
+                    hora: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                    tipo: tipo,
+                    mensaje: nuevoAviso
+                });
+                localStorage.setItem('avisos_history', JSON.stringify(historial));
+                
+                localStorage.setItem(`avisos_${tipo}`, nuevoAviso);
+                alert(`Aviso de ${tipo} guardado con éxito.`);
+            }
+            cargarHistorialAvisos();
+        }
+
+        function cargarHistorialAvisos() {
+            const avisos = JSON.parse(localStorage.getItem('avisos_history')) || [];
+            avisosBody.innerHTML = '';
+            if (avisos.length === 0) {
+                avisosBody.innerHTML = '<tr><td colspan="3">No hay avisos en el historial.</td></tr>';
+            } else {
+                avisos.reverse().forEach(aviso => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${aviso.fecha} ${aviso.hora}</td>
+                        <td>${aviso.tipo.charAt(0).toUpperCase() + aviso.tipo.slice(1)}</td>
+                        <td>${aviso.mensaje.replace(/\n/g, '<br>')}</td>
+                    `;
+                    avisosBody.appendChild(row);
+                });
+            }
+        }
+        
+        function cargarTablaOperarios() {
+            const operarios = getOperarios();
+            operariosBody.innerHTML = '';
+            if (operarios.length === 0) {
+                operariosBody.innerHTML = '<tr><td colspan="3">No hay operarios registrados.</td></tr>';
+                return;
+            }
+            operarios.forEach(operario => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${operario.nombre}</td>
+                    <td>${operario.dni}</td>
+                    <td class="action-buttons">
+                        <button class="btn btn-edit" onclick="editarOperario('${operario.dni}')">Editar</button>
+                        <button class="btn btn-delete" onclick="eliminarOperario('${operario.dni}')">Eliminar</button>
+                    </td>
+                `;
+                operariosBody.appendChild(row);
+            });
+        }
+        
+        function editarOperario(dni) {
+            let operarios = getOperarios();
+            const operarioAEditar = operarios.find(op => op.dni === dni);
+            if (!operarioAEditar) {
+                alert('Operario no encontrado.');
+                return;
+            }
+
+            const nuevoNombre = prompt(`Editar nombre de ${operarioAEditar.nombre}:`, operarioAEditar.nombre);
+            if (nuevoNombre !== null && nuevoNombre.trim() !== '') {
+                const nuevoDni = prompt(`Editar DNI de ${nuevoNombre}:`, operarioAEditar.dni);
+                if (nuevoDni !== null && nuevoDni.trim() !== '') {
+                    const dniExistente = operarios.find(op => op.dni === nuevoDni.trim().toUpperCase() && op.dni !== dni);
+                    if (dniExistente) {
+                        alert("Error: Ya existe un operario con ese DNI.");
+                        return;
+                    }
+                    operarioAEditar.nombre = nuevoNombre.trim();
+                    operarioAEditar.dni = nuevoDni.trim().toUpperCase();
+                    setOperarios(operarios);
+                    alert('Operario actualizado con éxito.');
+                    cargarTablaOperarios();
+                }
+            }
+        }
+        
+        function eliminarOperario(dni) {
+            if (confirm("¿Estás seguro de que quieres eliminar a este operario? Esta acción es irreversible.")) {
+                let operarios = getOperarios();
+                const operariosActualizados = operarios.filter(op => op.dni !== dni);
+                setOperarios(operariosActualizados);
+                alert("Operario eliminado con éxito.");
+                cargarTablaOperarios();
+            }
+        }
+        
+        function actualizarTablaRegistros() {
+            const registros = JSON.parse(localStorage.getItem('fichajes_mejorado')) || [];
+            registrosBody.innerHTML = '';
+            registros.forEach(registro => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${registro.nombre}</td>
+                    <td>${registro.dni}</td>
+                    <td>${registro.tipo.charAt(0).toUpperCase() + registro.tipo.slice(1)}</td>
+                    <td>${registro.fecha}</td>
+                    <td>${registro.hora}</td>
+                `;
+                registrosBody.appendChild(row);
+            });
+        }
+
+        function mostrarResumen() {
+            const registros = JSON.parse(localStorage.getItem('fichajes_mejorado')) || [];
+            const horasTrabajadas = {};
+            const fichajesPorOperario = {};
+            registros.forEach(registro => {
+                if (!fichajesPorOperario[registro.dni]) {
+                    fichajesPorOperario[registro.dni] = {
+                        nombre: registro.nombre,
+                        registros: []
+                    };
+                }
+                fichajesPorOperario[registro.dni].registros.push(registro);
+            });
+
+            for (const dni in fichajesPorOperario) {
+                const registrosOperario = fichajesPorOperario[dni].registros.sort((a, b) => {
+                    const [d1, m1, a1] = a.fecha.split('/');
+                    const [h1, mi1, s1] = a.hora.split(':');
+                    const dateA = new Date(a1, m1 - 1, d1, h1, mi1, s1);
+                    const [d2, m2, a2] = b.fecha.split('/');
+                    const [h2, mi2, s2] = b.hora.split(':');
+                    const dateB = new Date(a2, m2 - 1, d2, h2, mi2, s2);
+                    return dateA - dateB;
+                });
+                let totalMinutos = 0;
+                let horaEntrada = null;
+                registrosOperario.forEach(registro => {
+                    const [h, m] = registro.hora.split(':');
+                    const horaActual = new Date(1970, 0, 1, parseInt(h), parseInt(m));
+                    if (registro.tipo === 'entrada') {
+                        horaEntrada = horaActual;
+                    } else if (registro.tipo === 'salida' && horaEntrada) {
+                        const tiempoTrabajado = (horaActual - horaEntrada) / (1000 * 60);
+                        if (tiempoTrabajado > 0) {
+                            totalMinutos += tiempoTrabajado;
+                        }
+                        horaEntrada = null;
+                    }
+                });
+                
+                const horas = Math.floor(totalMinutos / 60);
+                const minutos = Math.round(totalMinutos % 60);
+                horasTrabajadas[dni] = {
+                    nombre: fichajesPorOperario[dni].nombre,
+                    horas: `${horas}h ${minutos}m`
+                };
+            }
+
+            resumenBody.innerHTML = '';
+            for (const dni in horasTrabajadas) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${horasTrabajadas[dni].nombre}</td>
+                    <td>${horasTrabajadas[dni].horas}</td>
+                `;
+                resumenBody.appendChild(row);
+            }
+            resumenSection.style.display = 'block';
+        }
+
+        function borrarRegistros() {
+            if (confirm("¿Estás seguro de que quieres borrar todos los registros? Esta acción es irreversible.")) {
+                localStorage.removeItem('fichajes_mejorado');
+                actualizarTablaRegistros();
+                resumenSection.style.display = 'none';
+                alert("Todos los registros han sido borrados.");
+            }
+        }
+
+        function exportarAExcel() {
+            const registros = JSON.parse(localStorage.getItem('fichajes_mejorado')) || [];
+            if (registros.length === 0) {
+                alert("No hay registros para exportar.");
+                return;
+            }
+
+            // Agrupar los fichajes por operario y fecha
+            const fichajesPorDia = {};
+            registros.forEach(reg => {
+                const clave = `${reg.dni}-${reg.fecha}`;
+                if (!fichajesPorDia[clave]) {
+                    fichajesPorDia[clave] = {
+                        dni: reg.dni,
+                        nombre: reg.nombre,
+                        fecha: reg.fecha
+                    };
+                }
+                if (reg.tipo === 'entrada') {
+                    fichajesPorDia[clave].entrada = reg.hora;
+                } else if (reg.tipo === 'salida') {
+                    fichajesPorDia[clave].salida = reg.hora;
+                }
+            });
+
+            const dataParaExcel = [];
+            for (const clave in fichajesPorDia) {
+                const jornada = fichajesPorDia[clave];
+                
+                let horasJornada = "N/A";
+                if (jornada.entrada && jornada.salida) {
+                    const [hEntrada, mEntrada] = jornada.entrada.split(':').map(Number);
+                    const [hSalida, mSalida] = jornada.salida.split(':').map(Number);
+
+                    const totalMinutosEntrada = hEntrada * 60 + mEntrada;
+                    const totalMinutosSalida = hSalida * 60 + mSalida;
+                    const minutosTrabajados = totalMinutosSalida - totalMinutosEntrada - 60; // Resta 60 minutos de comida
+
+                    const horas = Math.floor(minutosTrabajados / 60);
+                    const minutos = minutosTrabajados % 60;
+                    
+                    horasJornada = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:00`;
+                }
+
+                dataParaExcel.push({
+                    'Operario': jornada.nombre,
+                    'DNI': jornada.dni,
+                    'Fecha': jornada.fecha,
+                    'Hora entrada': jornada.entrada || 'Sin registro',
+                    'Hora salida': jornada.salida || 'Sin registro',
+                    'Hora Comida': (jornada.entrada && jornada.salida) ? '01:00:00' : 'N/A',
+                    'Horas Jornada': horasJornada
+                });
+            }
+            
+            // Ordenar los registros por fecha y luego por operario
+            dataParaExcel.sort((a, b) => {
+                const [d1, m1, a1] = a['Fecha'].split('/');
+                const [d2, m2, a2] = b['Fecha'].split('/');
+                const fechaA = new Date(a1, m1 - 1, d1);
+                const fechaB = new Date(a2, m2 - 1, d2);
+                
+                const fechaComp = fechaA - fechaB;
+                if (fechaComp !== 0) return fechaComp;
+                
+                return a['Operario'].localeCompare(b['Operario']);
+            });
+
+            const ws = XLSX.utils.json_to_sheet(dataParaExcel);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Fichajes");
+            XLSX.writeFile(wb, "Registros_Fichajes.xlsx");
+        }
+
+
+        function logoutAdmin() {
+            adminPanel.style.display = 'none';
+            loginContainer.style.display = 'block';
+            toggleForm('login');
+        }
+
+        // Inicializar el sistema: verificar si la lista de operarios ya existe.
+        if (!localStorage.getItem('operarios')) {
+            const operariosIniciales = [
+                { nombre: "Joan Pérez", dni: "12345678A", password: "joan" },
+                { nombre: "Maria García", dni: "23456789B", password: "maria" }
+            ];
+            setOperarios(operariosIniciales);
+        }
+
+    </script>
+
+</body>
+</html>
